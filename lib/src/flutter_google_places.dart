@@ -58,6 +58,10 @@ class PlacesAutocompleteWidget extends StatefulWidget {
   /// or custom configuration
   final Client? httpClient;
 
+  /// Custom TextStyle tile list
+  final TextStyle? titleTextStyle;
+  final TextStyle? subTitleTextStyle;
+
   PlacesAutocompleteWidget(
       {Key? key,
       required this.apiKey,
@@ -85,7 +89,9 @@ class PlacesAutocompleteWidget extends StatefulWidget {
       this.headers,
       this.textDecoration,
       this.textStyle,
-      this.cursorColor})
+      this.cursorColor,
+      this.titleTextStyle,
+      this.subTitleTextStyle})
       : super(key: key) {
     if (apiKey == null && proxyBaseUrl == null) {
       throw ArgumentError(
@@ -116,6 +122,8 @@ class _PlacesAutocompleteScaffoldState extends PlacesAutocompleteState {
     final body = PlacesAutocompleteResult(
       onTap: Navigator.of(context).pop,
       logo: widget.logo,
+      titleTextStyle: widget.titleTextStyle,
+      subTitleTextStyle: widget.subTitleTextStyle,
     );
     return Scaffold(appBar: appBar, body: body);
   }
@@ -281,9 +289,15 @@ class _Loader extends StatelessWidget {
 class PlacesAutocompleteResult extends StatelessWidget {
   final ValueChanged<Prediction> onTap;
   final Widget? logo;
+  final TextStyle? titleTextStyle;
+  final TextStyle? subTitleTextStyle;
 
   const PlacesAutocompleteResult(
-      {Key? key, required this.onTap, required this.logo})
+      {Key? key,
+      required this.onTap,
+      required this.logo,
+      this.titleTextStyle,
+      this.subTitleTextStyle})
       : super(key: key);
 
   @override
@@ -310,6 +324,8 @@ class PlacesAutocompleteResult extends StatelessWidget {
         return PredictionsListView(
           predictions: response.predictions,
           onTap: onTap,
+          titleTextStyle: titleTextStyle,
+          subTitleTextStyle: subTitleTextStyle,
         );
       },
     );
@@ -405,16 +421,27 @@ class PoweredByGoogleImage extends StatelessWidget {
 class PredictionsListView extends StatelessWidget {
   final List<Prediction> predictions;
   final ValueChanged<Prediction> onTap;
+  final TextStyle? titleTextStyle;
+  final TextStyle? subTitleTextStyle;
 
   const PredictionsListView(
-      {Key? key, required this.predictions, required this.onTap})
+      {Key? key,
+      required this.predictions,
+      required this.onTap,
+      this.titleTextStyle,
+      this.subTitleTextStyle})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       children: predictions
-          .map((Prediction p) => PredictionTile(prediction: p, onTap: onTap))
+          .map((Prediction p) => PredictionTile(
+                prediction: p,
+                onTap: onTap,
+                titleTextStyle: titleTextStyle,
+                subTitleTextStyle: subTitleTextStyle,
+              ))
           .toList(growable: false),
     );
   }
@@ -423,16 +450,34 @@ class PredictionsListView extends StatelessWidget {
 class PredictionTile extends StatelessWidget {
   final Prediction prediction;
   final ValueChanged<Prediction> onTap;
+  final TextStyle? titleTextStyle;
+  final TextStyle? subTitleTextStyle;
 
   const PredictionTile(
-      {Key? key, required this.prediction, required this.onTap})
+      {Key? key,
+      required this.prediction,
+      required this.onTap,
+      this.titleTextStyle,
+      this.subTitleTextStyle})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    print(prediction.toJson());
+    print(prediction.structuredFormatting?.mainText);
+    print(prediction.structuredFormatting?.secondaryText);
+
     return ListTile(
-      leading: const Icon(Icons.location_on),
-      title: Text(prediction.description ?? ''),
+      title: Text(
+        prediction.structuredFormatting?.mainText ??
+            prediction.description ??
+            '',
+        style: titleTextStyle,
+      ),
+      subtitle: Text(
+        prediction.structuredFormatting?.secondaryText ?? '',
+        style: subTitleTextStyle,
+      ),
       onTap: () => onTap(prediction),
     );
   }
@@ -626,7 +671,9 @@ abstract class PlacesAutocomplete {
       TextStyle? textStyle,
       Color? cursorColor,
       EdgeInsets? insetPadding,
-      Widget? backArrowIcon}) {
+      Widget? backArrowIcon,
+      TextStyle? titleTextStyle,
+      TextStyle? subTitleTextStyle}) {
     PlacesAutocompleteWidget builder(BuildContext context) =>
         PlacesAutocompleteWidget(
           apiKey: apiKey,
@@ -655,6 +702,8 @@ abstract class PlacesAutocomplete {
           cursorColor: cursorColor,
           insetPadding: insetPadding,
           backArrowIcon: backArrowIcon,
+          titleTextStyle: titleTextStyle,
+          subTitleTextStyle: subTitleTextStyle,
         );
 
     if (mode == Mode.overlay) {
